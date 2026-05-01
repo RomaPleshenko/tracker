@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Учёт зарплаты</title>
+
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161922;
+    --surface2: #1e2230;
+    --border: #2a2f3f;
+    --accent: #c8f03e;
+    --accent2: #3ef0c8;
+    --text: #eef0f6;
+    --muted: #6b7290;
+    --red: #f03e6a;
+    --cat1: #c8f03e;
+    --cat2: #3ef0c8;
+    --cat3: #f0c83e;
+    --cat4: #3e8cf0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Arial', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-family: 'Arial Black', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .month-nav button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .month-nav button:hover { background: var(--border); }
+
+  .month-label {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 180px;
+    text-align: center;
+  }
+
+  /* Summary cards */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-family: 'Arial Black', sans-serif;
+    font-size: clamp(1rem, 3.5vw, 1.4rem);
+    font-weight: 600;
+  }
+
+  .card-value.green { color: var(--accent); }
+  .card-value.red { color: var(--red); }
+  .card-value.blue { color: var(--accent2); }
+
+  /* Progress bar */
+  .balance-bar-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+
+  .balance-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .balance-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .balance-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.4s ease;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Arial', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0d0f14;
+    font-weight: 700;
+  }
+
+  /* Add entry form */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .add-form h3 {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  input, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Arial', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus { border-color: var(--accent); }
+
+  select option { background: var(--surface2); }
+
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+    margin-top: 6px;
+  }
+
+  .btn-salary {
+    background: var(--accent);
+    color: #0d0f14;
+  }
+
+  .btn-expense {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+
+  /* Entries list */
+  .entries-header {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .entry-info { flex: 1; min-width: 0; }
+
+  .entry-desc {
+    font-size: 0.88rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entry-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .entry-amount {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .entry-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .entry-del:hover { color: var(--red); }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 32px 0;
+    font-size: 0.88rem;
+  }
+
+  /* Category breakdown */
+  .cat-breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+
+  .cat-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .cat-name {
+    font-size: 0.82rem;
+    color: var(--text);
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .cat-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .cat-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .cat-amount {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    width: 70px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 380px) {
+    .summary { grid-template-columns: 1fr 1fr; }
+    .summary .card:last-child { grid-column: span 2; }
+  }
+</style>
+
+</head>
+<body>
+
+<header>
+  <h1>💰 Учёт зарплаты</h1>
+  <p>Доходы и расходы по дням</p>
+</header>
+
+<div class="month-nav">
+  <button id="prevMonth">&#8249;</button>
+  <span class="month-label" id="monthLabel"></span>
+  <button id="nextMonth">&#8250;</button>
+</div>
+
+<div class="summary">
+  <div class="card">
+    <div class="card-label">Заработано</div>
+    <div class="card-value green" id="totalIncome">0 ₴</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Потрачено</div>
+    <div class="card-value red" id="totalExpense">0 ₴</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Остаток</div>
+    <div class="card-value blue" id="totalBalance">0 ₴</div>
+  </div>
+</div>
+
+<div class="balance-bar-wrap">
+  <div class="balance-bar-labels">
+    <span>Расходы</span>
+    <span id="barPct">0%</span>
+    <span>Доходы</span>
+  </div>
+  <div class="balance-bar">
+    <div class="balance-bar-fill" id="balanceBar" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="cat-breakdown">
+  <div class="cat-title">По категориям</div>
+  <div id="catRows"></div>
+</div>
+
+<div class="add-form">
+  <h3 id="formTitle">Добавить запись</h3>
+  <div class="tabs">
+    <button class="tab active" onclick="setType('salary')">💵 Зарплата</button>
+    <button class="tab" onclick="setType('expense')">🧾 Расход</button>
+  </div>
+  <div class="form-row" style="grid-template-columns: 2fr 1fr;">
+    <input type="number" id="amount" placeholder="Сумма, ₴" min="0">
+    <input type="date" id="date">
+  </div>
+  <div id="descRow" class="form-row" style="display:none">
+    <input type="text" id="desc" placeholder="Описание (необязательно)">
+    <select id="category">
+      <option value="Еда и продукты">🍕 Еда и продукты</option>
+      <option value="Транспорт">🚌 Транспорт</option>
+      <option value="Развлечения">🎮 Развлечения</option>
+      <option value="Коммунальные услуги">🏠 Коммунальные услуги</option>
+    </select>
+  </div>
+  <button class="btn btn-salary" id="addBtn" onclick="addEntry()">+ Добавить зарплату</button>
+</div>
+
+<div class="entries-header">История</div>
+<div id="entriesList"></div>
+
+<script>
+<script>
+const SUPABASE_URL = 'https://hejwvqzmlgxvqqstiyij.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhland2cXptbGd4dnFxc3RpeWlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MjMwNTUsImV4cCI6MjA5MzE5OTA1NX0.FH47NebEWIDpyQFOx8GTz3MlNt2JxGLr9tN-AbkayXU';
+
+const CATS = {
+  '\u0415\u0434\u0430 \u0438 \u043f\u0440\u043e\u0434\u0443\u043a\u0442\u044b': { color: 'var(--cat1)', emoji: '\ud83c\udf55' },
+  '\u0422\u0440\u0430\u043d\u0441\u043f\u043e\u0440\u0442':       { color: 'var(--cat2)', emoji: '\ud83d\ude8c' },
+  '\u0420\u0430\u0437\u0432\u043b\u0435\u0447\u0435\u043d\u0438\u044f':     { color: 'var(--cat3)', emoji: '\ud83c\udfae' },
+  '\u041a\u043e\u043c\u043c\u0443\u043d\u0430\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u043b\u0443\u0433\u0438': { color: 'var(--cat4)', emoji: '\ud83c\udfe0' },
+};
+
+let currentType = 'salary';
+let viewYear, viewMonth;
+let allEntries = [];
+
+async function fetchEntries() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/entries?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+    });
+    allEntries = await res.json();
+    render();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function getEntries() {
+  const key = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}`;
+  return allEntries.filter(e => e.date && e.date.startsWith(key));
+}
+
+function setType(type) {
+  currentType = type;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&type==='salary')||(i===1&&type==='expense')));
+  document.getElementById('descRow').style.display = type === 'expense' ? 'grid' : 'none';
+  document.getElementById('addBtn').className = 'btn btn-' + (type === 'salary' ? 'salary' : 'expense');
+  document.getElementById('addBtn').textContent = type === 'salary' ? '+ \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u0440\u043f\u043b\u0430\u0442\u0443' : '+ \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0440\u0430\u0441\u0445\u043e\u0434';
+}
+
+async function addEntry() {
+  const amount = parseFloat(document.getElementById('amount').value);
+  const date = document.getElementById('date').value;
+  if (!amount || !date) { alert('\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u0443\u043c\u043c\u0443 \u0438 \u0434\u0430\u0442\u0443'); return; }
+
+  const entry = {
+    type: currentType,
+    amount,
+    date,
+    description: currentType === 'expense' ? (document.getElementById('desc').value || '') : '\u0417\u0430\u0440\u043f\u043b\u0430\u0442\u0430',
+    category: currentType === 'expense' ? document.getElementById('category').value : null,
+  };
+
+  document.getElementById('addBtn').disabled = true;
+  await fetch(`${SUPABASE_URL}/rest/v1/entries`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(entry)
+  });
+  document.getElementById('addBtn').disabled = false;
+  document.getElementById('amount').value = '';
+  document.getElementById('desc').value = '';
+  await fetchEntries();
+}
+
+async function deleteEntry(id) {
+  await fetch(`${SUPABASE_URL}/rest/v1/entries?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  await fetchEntries();
+}
+
+function fmt(n) {
+  return n.toLocaleString('uk-UA') + ' \u20b4';
+}
+
+function render() {
+  const entries = getEntries();
+  const income = entries.filter(e => e.type === 'salary').reduce((s,e) => s + parseFloat(e.amount), 0);
+  const expense = entries.filter(e => e.type === 'expense').reduce((s,e) => s + parseFloat(e.amount), 0);
+  const balance = income - expense;
+  const pct = income > 0 ? Math.min(100, Math.round((expense / income) * 100)) : 0;
+
+  document.getElementById('totalIncome').textContent = fmt(income);
+  document.getElementById('totalExpense').textContent = fmt(expense);
+  document.getElementById('totalBalance').textContent = fmt(balance);
+  document.getElementById('totalBalance').style.color = balance >= 0 ? 'var(--accent2)' : 'var(--red)';
+  document.getElementById('balanceBar').style.width = pct + '%';
+  document.getElementById('balanceBar').style.background = pct > 80
+    ? 'linear-gradient(90deg, var(--red), #ff7b5a)'
+    : 'linear-gradient(90deg, var(--accent2), var(--accent))';
+  document.getElementById('barPct').textContent = pct + '%';
+
+  const catEl = document.getElementById('catRows');
+  catEl.innerHTML = '';
+  const catTotals = {};
+  entries.filter(e => e.type === 'expense').forEach(e => {
+    catTotals[e.category] = (catTotals[e.category] || 0) + parseFloat(e.amount);
+  });
+
+  if (Object.keys(catTotals).length === 0) {
+    catEl.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">\u0420\u0430\u0441\u0445\u043e\u0434\u043e\u0432 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442</div>';
+  } else {
+    const maxVal = Math.max(...Object.values(catTotals));
+    Object.entries(catTotals).sort((a,b) => b[1]-a[1]).forEach(([cat, val]) => {
+      const info = CATS[cat] || { color: 'var(--muted)', emoji: '\ud83d\udccc' };
+      const p = Math.round((val / maxVal) * 100);
+      catEl.innerHTML += `<div class="cat-row"><div class="cat-name">${info.emoji} ${cat}</div><div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${p}%;background:${info.color}"></div></div><div class="cat-amount" style="color:${info.color}">${fmt(val)}</div></div>`;
+    });
+  }
+
+  const listEl = document.getElementById('entriesList');
+  if (entries.length === 0) {
+    listEl.innerHTML = '<div class="empty">\u0417\u0430\u043f\u0438\u0441\u0435\u0439 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442.<br>\u0414\u043e\u0431\u0430\u0432\u044c\u0442\u0435 \u043f\u0435\u0440\u0432\u0443\u044e!</div>';
+    return;
+  }
+
+  listEl.innerHTML = entries.map(e => {
+    const isSalary = e.type === 'salary';
+    const color = isSalary ? 'var(--accent)' : (CATS[e.category]?.color || 'var(--red)');
+    const sign = isSalary ? '+' : '\u2212';
+    const meta = isSalary ? e.date : `${e.date} \u00b7 ${e.category}`;
+    const label = e.description || e.category;
+    return `<div class="entry"><div class="entry-dot" style="background:${color}"></div><div class="entry-info"><div class="entry-desc">${label}</div><div class="entry-meta">${meta}</div></div><div class="entry-amount" style="color:${color}">${sign}${fmt(parseFloat(e.amount))}</div><button class="entry-del" onclick="deleteEntry(${e.id})">\u2715</button></div>`;
+  }).join('');
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  updateMonthLabel();
+  render();
+}
+
+function updateMonthLabel() {
+  const names = ['\u042f\u043d\u0432\u0430\u0440\u044c','\u0424\u0435\u0432\u0440\u0430\u043b\u044c','\u041c\u0430\u0440\u0442','\u0410\u043f\u0440\u0435\u043b\u044c','\u041c\u0430\u0439','\u0418\u044e\u043d\u044c','\u0418\u044e\u043b\u044c','\u0410\u0432\u0433\u0443\u0441\u0442','\u0421\u0435\u043d\u0442\u044f\u0431\u0440\u044c','\u041e\u043a\u0442\u044f\u0431\u0440\u044c','\u041d\u043e\u044f\u0431\u0440\u044c','\u0414\u0435\u043a\u0430\u0431\u0440\u044c'];
+  document.getElementById('monthLabel').textContent = `${names[viewMonth]} ${viewYear}`;
+}
+
+const now = new Date();
+viewYear = now.getFullYear();
+viewMonth = now.getMonth();
+document.getElementById('date').value = now.toISOString().split('T')[0];
+document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+updateMonthLabel();
+fetchEntries();
+</script>
+
+</body>
+</html>
